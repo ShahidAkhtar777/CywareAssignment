@@ -76,6 +76,14 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 		}
 		if inputMonth < currentMonth {
 			currentYear++
+		} else if inputMonth == currentMonth && inputDayOfMonth < currentDayOfMonth {
+			currentYear++
+			if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
+				inputHour = 0
+				inputMinute = 0
+			} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
+				inputMinute = 0
+			}
 		}
 		if currentMonth != inputMonth {
 			if cronExpr.DayOfMonth == "*" {
@@ -91,14 +99,47 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 	}
 
 	if cronExpr.DayOfMonth != "*" {
-		if currentMonth == inputMonth && inputDayOfMonth < currentDayOfMonth {
-			// Check for the next available day in the same month
+		if currentMonth == inputMonth && inputDayOfMonth < currentDayOfMonth && cronExpr.Month == "*" {
+			// Check for the next available day in the next month
 			inputMonth++
 			if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
 				inputHour = 0
 				inputMinute = 0
 			} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
 				inputMinute = 0
+			}
+		} else if currentMonth == inputMonth {
+			if inputDayOfMonth > currentDayOfMonth {
+				if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
+					inputHour = 0
+					inputMinute = 0
+				} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
+					inputMinute = 0
+				}
+			} else if inputDayOfMonth == currentDayOfMonth {
+				if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
+					inputHour = currentHour
+					inputMinute = inputMinute + 1
+
+					if inputMinute == 60 {
+						inputHour++
+						inputMinute = 0
+					}
+				} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
+					if inputHour > currentHour {
+						inputMinute = 0
+					} else if (inputHour < currentHour && cronExpr.Month != "*") || (inputHour == currentHour && inputMinute < currentMinute) {
+						currentYear++
+					}
+				} else if cronExpr.Hour != "*" && cronExpr.Minute != "*" {
+					if inputHour < currentHour || (inputHour == currentHour && inputMinute < currentMinute) {
+						if cronExpr.Month == "*" {
+							inputMonth++
+						} else {
+							currentYear++
+						}
+					}
+				}
 			}
 		}
 	}

@@ -43,7 +43,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Goodbye!")
+	fmt.Println("Goodbye! ~ Interview Candidate: Shahid Akhtar")
 }
 
 func displayRecentCronRuns(cronService *services.CronService) {

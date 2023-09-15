@@ -36,37 +36,10 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 	currentMonth := int(currentTime.Month())
 	currentYear := currentTime.Year()
 
-	inputMinute := currentMinute
-	if cronExpr.Minute != "*" {
-		parsedMinute, err := strconv.Atoi(cronExpr.Minute)
-		if err == nil {
-			inputMinute = parsedMinute
-		}
-	}
-
-	inputHour := currentHour
-	if cronExpr.Hour != "*" {
-		parsedHour, err := strconv.Atoi(cronExpr.Hour)
-		if err == nil {
-			inputHour = parsedHour
-		}
-	}
-
-	inputDayOfMonth := currentDayOfMonth
-	if cronExpr.DayOfMonth != "*" {
-		parsedDay, err := strconv.Atoi(cronExpr.DayOfMonth)
-		if err == nil {
-			inputDayOfMonth = parsedDay
-		}
-	}
-
-	inputMonth := currentMonth
-	if cronExpr.Month != "*" {
-		parsedMonth, err := strconv.Atoi(cronExpr.Month)
-		if err == nil {
-			inputMonth = parsedMonth
-		}
-	}
+	inputMinute := parseCronField(cronExpr.Minute, currentMinute)
+	inputHour := parseCronField(cronExpr.Hour, currentHour)
+	inputDayOfMonth := parseCronField(cronExpr.DayOfMonth, currentDayOfMonth)
+	inputMonth := parseCronField(cronExpr.Month, currentMonth)
 
 	inputMonth = currentMonth
 	if cronExpr.Month != "*" {
@@ -78,23 +51,13 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 			currentYear++
 		} else if inputMonth == currentMonth && inputDayOfMonth < currentDayOfMonth {
 			currentYear++
-			if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
-				inputHour = 0
-				inputMinute = 0
-			} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
-				inputMinute = 0
-			}
+			inputHour, inputMinute = setHourMinute(cronExpr, inputHour, inputMinute)
 		}
 		if currentMonth != inputMonth {
 			if cronExpr.DayOfMonth == "*" {
 				inputDayOfMonth = 1
 			}
-			if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
-				inputHour = 0
-				inputMinute = 0
-			} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
-				inputMinute = 0
-			}
+			inputHour, inputMinute = setHourMinute(cronExpr, inputHour, inputMinute)
 		}
 	}
 
@@ -102,20 +65,10 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 		if currentMonth == inputMonth && inputDayOfMonth < currentDayOfMonth && cronExpr.Month == "*" {
 			// Check for the next available day in the next month
 			inputMonth++
-			if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
-				inputHour = 0
-				inputMinute = 0
-			} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
-				inputMinute = 0
-			}
+			inputHour, inputMinute = setHourMinute(cronExpr, inputHour, inputMinute)
 		} else if currentMonth == inputMonth {
 			if inputDayOfMonth > currentDayOfMonth {
-				if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
-					inputHour = 0
-					inputMinute = 0
-				} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
-					inputMinute = 0
-				}
+				inputHour, inputMinute = setHourMinute(cronExpr, inputHour, inputMinute)
 			} else if inputDayOfMonth == currentDayOfMonth {
 				if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
 					inputHour = currentHour
@@ -130,6 +83,9 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 						inputMinute = 0
 					} else if (inputHour < currentHour && cronExpr.Month != "*") || (inputHour == currentHour && inputMinute < currentMinute) {
 						currentYear++
+					} else if inputHour < currentHour && cronExpr.Month == "*" {
+						inputMonth++
+						inputHour, inputMinute = setHourMinute(cronExpr, inputHour, inputMinute)
 					}
 				} else if cronExpr.Hour != "*" && cronExpr.Minute != "*" {
 					if inputHour < currentHour || (inputHour == currentHour && inputMinute < currentMinute) {
@@ -186,6 +142,28 @@ func (cronExpr *CronExpression) CalculateNextRun(currentTime time.Time) (time.Ti
 
 	nextRun := time.Date(currentYear, time.Month(inputMonth), inputDayOfMonth, inputHour, inputMinute, 0, 0, currentTime.Location())
 	return nextRun, nil
+}
+
+func parseCronField(field string, current int) int {
+	if field == "*" {
+		return current
+	}
+	parsedValue, err := strconv.Atoi(field)
+	if err != nil {
+		return current
+	}
+	return parsedValue
+}
+
+func setHourMinute(cronExpr *CronExpression, currentHour, currentMinute int) (int, int) {
+	if cronExpr.Hour == "*" && cronExpr.Minute == "*" {
+		return 0, 0
+	} else if cronExpr.Hour != "*" && cronExpr.Minute == "*" {
+		return currentHour, 0
+	} else if cronExpr.Hour == "*" && cronExpr.Minute != "*" {
+		return 0, currentMinute
+	}
+	return currentHour, currentMinute
 }
 
 // daysInMonth returns the number of days in a given month.

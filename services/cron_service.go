@@ -6,7 +6,6 @@ import (
 	"CywareAssignment/utils"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"time"
 )
 
@@ -31,14 +30,21 @@ func (s *CronService) CalculateNextRun(cronExpression string) (time.Time, error)
 			return time.Time{}, errors.New("error calculating next run")
 		}
 
+		cronRun := models.NewCronRun(nextRun, cronExpression)
+		if err := utils.DB.Create(&cronRun).Error; err != nil {
+			return time.Time{}, err
+		}
+
 		fmt.Printf("Next Run At: %s\n", nextRun.Format("02-01-2006 15:04:05"))
-		cronRun := models.NewCronRun(uuid.New().String(), nextRun, cronExpression)
-		s.repository.AddRun(cronRun)
 
 		return nextRun, nil
 	}
 }
 
 func (s *CronService) GetRecentCronRuns() []*models.CronRun {
-	return s.repository.GetRuns()
+	var runs []*models.CronRun
+	if err := utils.DB.Find(&runs).Error; err != nil {
+		return nil
+	}
+	return runs
 }

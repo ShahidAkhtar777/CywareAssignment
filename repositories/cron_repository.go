@@ -2,25 +2,25 @@ package repositories
 
 import (
 	"CywareAssignment/models"
-	"sync"
+	"github.com/jinzhu/gorm"
 )
 
-// CronRepository represents a repository for storing and retrieving CronRun records.
 type CronRepository struct {
-	mu   sync.RWMutex
-	runs []*models.CronRun
+	db *gorm.DB
 }
 
-func NewCronRepository() *CronRepository {
-	return &CronRepository{}
+func NewCronRepository(db *gorm.DB) *CronRepository {
+	return &CronRepository{db: db}
 }
 
-func (r *CronRepository) AddRun(run *models.CronRun) {
-	r.runs = append(r.runs, run)
+func (r *CronRepository) AddRun(run *models.CronRun) error {
+	return r.db.Create(run).Error
 }
 
-func (r *CronRepository) GetRuns() []*models.CronRun {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return r.runs
+func (r *CronRepository) GetRuns() ([]models.CronRun, error) {
+	var runs []models.CronRun
+	if err := r.db.Find(&runs).Error; err != nil {
+		return nil, err
+	}
+	return runs, nil
 }

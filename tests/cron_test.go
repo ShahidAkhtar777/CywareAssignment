@@ -112,4 +112,20 @@ func TestCalculateNextRun(t *testing.T) {
 	if !nextRun.Equal(expectedNextRun) {
 		t.Errorf("Expected next run: %s, got: %s", expectedNextRun, nextRun)
 	}
+
+	// Test Every month 16th at 9 am  [Time has not passed for today]
+	cronExpr, _ = utils.ParseCronExpression("* 9 16 *")
+	expectedNextRun = time.Date(2023, time.September, 16, 9, 0, 0, 0, time.UTC)
+	nextRun, _ = cronExpr.CalculateNextRun(currentTime)
+	if !nextRun.Equal(expectedNextRun) {
+		t.Errorf("Expected next run: %s, got: %s", expectedNextRun, nextRun)
+	}
+
+	// Test every month 10th day every hour at 15 min  [Time has passed for today]
+	cronExpr, _ = utils.ParseCronExpression("15 * 10 *")
+	expectedNextRun = time.Date(2023, time.October, 10, 0, 15, 0, 0, time.UTC)
+	nextRun, _ = cronExpr.CalculateNextRun(currentTime)
+	if !nextRun.Equal(expectedNextRun) {
+		t.Errorf("Expected next run: %s, got: %s", expectedNextRun, nextRun)
+	}
 }

@@ -6,14 +6,13 @@ import (
 
 // CronRun represents a record of a cron job run.
 type CronRun struct {
-	ID         string
+	ID         uint `gorm:"primary_key"`
 	RunAt      time.Time
 	Expression string
 }
 
-func NewCronRun(id string, runAt time.Time, expression string) *CronRun {
+func NewCronRun(runAt time.Time, expression string) *CronRun {
 	return &CronRun{
-		ID:         id,
 		RunAt:      runAt,
 		Expression: expression,
 	}

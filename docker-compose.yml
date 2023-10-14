@@ -1,0 +1,22 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:11.21-alpine3.17
+#    TODO: configure ${vars} in the env values properly.
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB_SSL_MODE: disable
+    ports:
+      - "5432:5432"
+    env_file:
+      - local.env
+#  app:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    depends_on:
+#      - postgres
+#    env_file:
+#      - .env
